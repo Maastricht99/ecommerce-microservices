@@ -2,6 +2,7 @@ import { Module } from "@nestjs/common";
 import { AuthModule } from "./auth/auth.module";
 import { ConfigModule } from "@nestjs/config";
 import validateAndLoadConfig from "./config";
+import { HttpModule } from "@nestjs/axios";
 
 const CORE_MODULES = [AuthModule];
 
