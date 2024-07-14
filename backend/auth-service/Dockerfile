@@ -1,4 +1,4 @@
-FROM python:lts
+FROM python:alpine3.19
 
 WORKDIR /app
 
@@ -8,4 +8,4 @@ RUN pip install -r requirements.txt
 
 COPY . .
 
-CMD ["python", "main.py"]
+CMD ["python", "src/main.py"]
