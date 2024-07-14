@@ -1,0 +1,21 @@
+version: "3.8"
+services: 
+  api-gateaway:
+    container_name: api-gateaway
+    build:
+      context: ./backend/api-gateaway
+      dockerfile: Dockerfile
+    env_file:
+      - ./backend/api-gateaway/.env
+    ports:
+      - 3000:3000
+
+  auth-service:
+    container_name: auth-service
+    build:
+      context: ./backend/auth-service
+      dockerfile: Dockerfile
+    env_file:
+      - ./backend/auth-service/.env
+    ports:
+      - 3001:3001
