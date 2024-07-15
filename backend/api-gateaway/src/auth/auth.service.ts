@@ -4,6 +4,7 @@ import { HttpService } from "@nestjs/axios";
 import { map } from "rxjs/operators";
 import { ConfigService } from "@nestjs/config";
 import { Env } from "src/config";
+import { LoginDTO } from "./dto/login.dto";
 
 @Injectable()
 export class AuthService {
@@ -14,10 +15,29 @@ export class AuthService {
 
   async register(dto: RegisterDTO) {
     const { auth: { host, port } } = this.configService.get("service", { infer: true })
-
     return this.httpService.post(`http://${host}:${port}/register`, dto)
       .pipe(
         map(res => res.data)
       );
+  }
+
+  async login(dto: LoginDTO) {
+    const { auth: { host, port } } = this.configService.get("service", { infer: true })
+    return this.httpService.post(`http://${host}:${port}/login`, dto)
+      .pipe(
+        map(res => res.data)
+      );
+  }
+
+  async authenticate(token: string) {
+    const { auth: { host, port } } = this.configService.get("service", { infer: true })
+    return this.httpService.get(`http://${host}:${port}/authenticate`, {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    })
+    .pipe(
+      map(res => res.data)
+    );
   }
 }
