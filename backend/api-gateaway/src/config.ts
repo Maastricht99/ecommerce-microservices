@@ -6,7 +6,8 @@ const EnvSchema = z.object({
     }),
     service: z.object({
         auth: z.object({
-            url: z.string()
+            host: z.string(),
+            port: z.coerce.number()
         })
     })
 });
@@ -20,7 +21,8 @@ export default () => {
         },
         service: {
             auth: {
-                url: process.env.AUTH_SERVICE_URL
+                host: process.env.AUTH_SERVICE_HOST,
+                port: process.env.AUTH_SERVICE_PORT
             }
         }
     }
