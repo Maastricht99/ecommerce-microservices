@@ -26,6 +26,8 @@ services:
     container_name: auth-service-db
     image: postgres
     environment:
-      - 
+      - POSTGRES_PASSWORD=xxx
+      - POSTGRES_USER=postgres
+      - POSTGRES_DB=xxx
     ports:
-      - 5432:5432
+      - 5433:5432
