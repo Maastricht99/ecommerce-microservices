@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, Depends
 from pydantic import BaseModel
 import uvicorn
 import config
@@ -22,7 +22,7 @@ class RegisterDTO(BaseModel):
 
 @app.post("/register")
 async def register(dto: RegisterDTO):
-    db_user = fake_db.get(dto.username)
+    # get user from db
     if db_user:
         raise Exception()
     hashed_password = get_hashed_password(dto.password)
@@ -32,7 +32,7 @@ async def register(dto: RegisterDTO):
         "password": hashed_password,
         "role": dto.role
     }
-    fake_db[new_user["id"]] = new_user
+    # add user to db
     token = generate_token(new_user["id"], new_user["role"])
     return token
 
@@ -53,9 +53,16 @@ async def login(dto: LoginDTO):
 
 
 @app.get("/authenticate")
-async def authenticate():
-    token = "xxx"
-    payload = decode_token(token)
+async def authenticate(request: Request):
+    auth_header = request.headers.get("Authorization")
+    if auth_header is None or not auth_header.startswith("Bearer "):
+        raise Exception()
+    token = auth_header.split(" ")[1]
+    payload = None
+    try:
+        payload = decode_token(token)
+    except Exception:
+        raise Exception()
     if not payload:
         raise Exception()
     return payload
