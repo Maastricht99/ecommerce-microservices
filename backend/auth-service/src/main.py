@@ -1,10 +1,14 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, Depends
 from pydantic import BaseModel
 import uvicorn
 import config
 from util import *
+from db import engine, db_dependency, Base
+from model import User
 
 app = FastAPI()
+
+Base.metadata.create_all(bind=engine)
 
 fake_db = {
     "xxx": {
@@ -21,28 +25,32 @@ class RegisterDTO(BaseModel):
     role: str
 
 @app.post("/register")
-async def register(dto: RegisterDTO):
-    db_user = fake_db.get(dto.username)
+async def register(dto: RegisterDTO, db: db_dependency):
+    db_user = db.query(User).filter(User.username == dto.username).first()
     if db_user:
         raise Exception()
     hashed_password = get_hashed_password(dto.password)
-    new_user = {
+    new_user = User(**{
         "id": dto.username,
         "username": dto.username,
         "password": hashed_password,
         "role": dto.role
-    }
-    fake_db[new_user["id"]] = new_user
+    })
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
     token = generate_token(new_user["id"], new_user["role"])
-    return token
+    return {
+        "token": token
+    }
 
 class LoginDTO(BaseModel):
     username: str
     password: str
 
 @app.post("/login")
-async def login(dto: LoginDTO):
-    db_user = fake_db.get(dto.username)
+async def login(dto: LoginDTO, db: db_dependency):
+    db_user = db.query(User).filter(User.username == dto.username).first()
     if not db_user:
         raise Exception()
     is_valid = is_password_valid(dto.password, db_user.password)
@@ -53,9 +61,16 @@ async def login(dto: LoginDTO):
 
 
 @app.get("/authenticate")
-async def authenticate():
-    token = "xxx"
-    payload = decode_token(token)
+async def authenticate(request: Request):
+    auth_header = request.headers.get("Authorization")
+    if auth_header is None or not auth_header.startswith("Bearer "):
+        raise Exception()
+    token = auth_header.split(" ")[1]
+    payload = None
+    try:
+        payload = decode_token(token)
+    except Exception:
+        raise Exception()
     if not payload:
         raise Exception()
     return payload
