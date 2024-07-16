@@ -5,17 +5,26 @@ import config
 from utils import decode_token, generate_token, is_password_valid, get_hashed_password, extract_token_from_headers
 from db import engine, db_dependency
 from models import Base, User, add_user, get_user_by_username
+from enum import Enum
 
 app = FastAPI()
 
 Base.metadata.create_all(bind=engine)
 
+class UserRole(str, Enum):
+    buyer = "buyer"
+    seller = "seller"
+    admin = "admin"
+
 class RegisterDTO(BaseModel):
     username: str
     password: str 
-    role: str
+    role: UserRole
+    
+class RegisterResponse(BaseModel):
+    token: str
 
-@app.post("/register")
+@app.post("/register", response_model=RegisterResponse)
 async def register(dto: RegisterDTO, db: db_dependency):
     db_user = get_user_by_username(dto.username, db)
     if db_user:
@@ -28,13 +37,16 @@ async def register(dto: RegisterDTO, db: db_dependency):
     })
     add_user(new_user, db)
     token = generate_token(str(new_user.id), new_user.role)
-    return { "token": token }
+    return RegisterResponse(token)
 
 class LoginDTO(BaseModel):
     username: str
     password: str
+    
+class LoginResponse(BaseModel):
+    token: str
 
-@app.post("/login")
+@app.post("/login", response_model=LoginResponse)
 async def login(dto: LoginDTO, db: db_dependency):
     db_user = get_user_by_username(dto.username, db)
     if not db_user:
@@ -43,16 +55,19 @@ async def login(dto: LoginDTO, db: db_dependency):
     if not is_valid:
         raise Exception("Password is not valid.")
     token = generate_token(str(db_user.id), db_user.role)
-    return { "token": token }
+    return LoginResponse(token)
 
+class AuthenticateResponse(BaseModel):
+    user_id: str
+    role: UserRole
 
-@app.get("/authenticate")
+@app.get("/authenticate", response_model=AuthenticateResponse)
 async def authenticate(request: Request):
     token = extract_token_from_headers(request)
     if token is None:
         raise Exception("No token found in headers.")
     payload = decode_token(token)
-    return payload
+    return AuthenticateResponse(**payload)
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=config.SERVER_PORT)
