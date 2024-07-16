@@ -1,10 +1,11 @@
 import { Injectable } from "@nestjs/common";
-import { RegisterDTO } from "./dto/register.dto";
+import { RegisterDTO } from "./dtos/register.dto";
 import { HttpService } from "@nestjs/axios";
 import { map } from "rxjs/operators";
 import { ConfigService } from "@nestjs/config";
 import { Env } from "src/config";
-import { LoginDTO } from "./dto/login.dto";
+import { LoginDTO } from "./dtos/login.dto";
+import { AuthenticateResponse, LoginResponse, RegisterResponse } from "./responses";
 
 @Injectable()
 export class AuthService {
@@ -15,7 +16,7 @@ export class AuthService {
 
   async register(dto: RegisterDTO) {
     const { auth: { host, port } } = this.configService.get("service", { infer: true })
-    return this.httpService.post(`http://${host}:${port}/register`, dto)
+    return this.httpService.post<RegisterResponse>(`http://${host}:${port}/register`, dto)
       .pipe(
         map(res => res.data)
       );
@@ -23,7 +24,7 @@ export class AuthService {
 
   async login(dto: LoginDTO) {
     const { auth: { host, port } } = this.configService.get("service", { infer: true })
-    return this.httpService.post(`http://${host}:${port}/login`, dto)
+    return this.httpService.post<LoginResponse>(`http://${host}:${port}/login`, dto)
       .pipe(
         map(res => res.data)
       );
@@ -31,7 +32,7 @@ export class AuthService {
 
   async authenticate(token: string) {
     const { auth: { host, port } } = this.configService.get("service", { infer: true })
-    return this.httpService.get(`http://${host}:${port}/authenticate`, {
+    return this.httpService.get<AuthenticateResponse>(`http://${host}:${port}/authenticate`, {
       headers: {
         Authorization: `Bearer ${token}`
       }
