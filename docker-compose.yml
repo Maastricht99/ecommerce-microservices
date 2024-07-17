@@ -13,6 +13,7 @@ services:
       - ${API_GATEAWAY_PORT}:3000
     depends_on:
       - auth-service
+      - product-catalog
 
   auth-service:
     container_name: auth-service
@@ -38,3 +39,17 @@ services:
       - POSTGRES_DB=${AUTH_SERVICE_DB_NAME}
     ports:
       - ${AUTH_SERVICE_DB_PORT}:5432
+
+  product-catalog:
+    container_name: product-catalog
+    build:
+      context: ./backend/product-catalog
+      dockerfile: Dockerfile
+    depends_on:
+      - product-catalog-db
+
+  product-catalog-db:
+    container_name: product-catalog-db
+    image: mongo:latest
+    ports:
+    - 27017:27017
