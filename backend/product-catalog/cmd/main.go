@@ -9,6 +9,7 @@ import (
 	"os"
 
 	"github.com/joho/godotenv"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -55,32 +56,74 @@ func Make(h HandlerFunc) http.HandlerFunc {
 	}
 }
 
-func main() {
+type Config struct {
+	serverPort string
+	dbHost     string
+	dbPort     string
+	dbUser     string
+	dbPassword string
+	dbName     string
+}
+
+func LoadConfig() *Config {
 	err := godotenv.Load()
 	if err != nil {
 		fmt.Println("Couldn't load .env file", err)
 	}
 
-	dbHost := os.Getenv("DB_HOST")
-	dbPort := os.Getenv("DB_PORT")
-	dbUser := os.Getenv("DB_USER")
-	dbPassword := os.Getenv("DB_PASSWORD")
-	dbName := os.Getenv("DB_NAME")
+	return &Config{
+		serverPort: os.Getenv("SERVER_PORT"),
+		dbHost:     os.Getenv("DB_HOST"),
+		dbPort:     os.Getenv("DB_PORT"),
+		dbUser:     os.Getenv("DB_USER"),
+		dbPassword: os.Getenv("DB_PASSWORD"),
+		dbName:     os.Getenv("DB_NAME"),
+	}
+}
 
-	connectionUri := fmt.Sprintf("mongodb://%s:%s@%s:%s/%s?authSource=admin", dbUser, dbPassword, dbHost, dbPort, dbName)
+var env = LoadConfig()
 
-	fmt.Println(connectionUri)
+func InitDBClient() (*mongo.Client, error) {
+
+	connectionUri := fmt.Sprintf("mongodb://%s:%s@%s:%s/%s?authSource=admin", env.dbUser, env.dbPassword, env.dbHost, env.dbPort, env.dbName)
 
 	clientOptions := options.Client().ApplyURI(connectionUri)
 	client, err := mongo.Connect(context.TODO(), clientOptions)
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 
 	err = client.Ping(context.TODO(), nil)
 	if err != nil {
+		return nil, err
+	}
+
+	return client, nil
+}
+
+func main() {
+
+	client, err := InitDBClient()
+	if err != nil {
 		log.Fatal(err)
 	}
 
-	fmt.Println("Connection to mongo db successful")
+	mux := http.NewServeMux()
+
+	mux.HandleFunc("GET /products", func(w http.ResponseWriter, r *http.Request) {
+		collection := client.Database(os.Getenv(("DB_NAME"))).Collection("products")
+		cursor, err := collection.Find(context.TODO(), bson.M{})
+		if err != nil {
+			log.Fatalf("Failed to find documents: %v", err)
+		}
+
+		var results []bson.M
+		if err = cursor.All(context.TODO(), &results); err != nil {
+			log.Fatalf("Failed to decode documents: %v", err)
+		}
+
+		SendJSONResponse(w, 200, results)
+	})
+
+	http.ListenAndServe(":"+env.serverPort, mux)
 }
