@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/google/uuid"
 	"github.com/joho/godotenv"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -15,8 +16,14 @@ import (
 )
 
 type CreateProductRequest struct {
-	Name  string
-	Price float32
+	Name  string  `json:"name"`
+	Price float32 `json:"price"`
+}
+
+type Product struct {
+	ID    string  `bson:"_id,omitempty" json:"id,omitempty"`
+	Name  string  `bson:"name" json:"name"`
+	Price float32 `bson:"price" json:"price"`
 }
 
 type ApiError struct {
@@ -110,20 +117,52 @@ func main() {
 
 	mux := http.NewServeMux()
 
-	mux.HandleFunc("GET /products", func(w http.ResponseWriter, r *http.Request) {
-		collection := client.Database(os.Getenv(("DB_NAME"))).Collection("products")
+	mux.HandleFunc("GET /products", Make(func(w http.ResponseWriter, r *http.Request) error {
+		collection := client.Database(env.dbName).Collection("products")
 		cursor, err := collection.Find(context.TODO(), bson.M{})
 		if err != nil {
-			log.Fatalf("Failed to find documents: %v", err)
+			return err
 		}
 
 		var results []bson.M
 		if err = cursor.All(context.TODO(), &results); err != nil {
-			log.Fatalf("Failed to decode documents: %v", err)
+			return err
 		}
 
 		SendJSONResponse(w, 200, results)
-	})
+		return nil
+	}))
+
+	mux.HandleFunc("POST /products", Make(func(w http.ResponseWriter, r *http.Request) error {
+		var req CreateProductRequest
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			return err
+		}
+
+		defer r.Body.Close()
+
+		uuid, err := uuid.NewRandom()
+		if err != nil {
+			return nil
+		}
+
+		product := Product{
+			ID:    uuid.String(),
+			Name:  req.Name,
+			Price: req.Price,
+		}
+
+		collection := client.Database(env.dbName).Collection("products")
+
+		_, err = collection.InsertOne(context.TODO(), product)
+		if err != nil {
+			return err
+		}
+
+		SendJSONResponse(w, 201, product.ID)
+
+		return nil
+	}))
 
 	http.ListenAndServe(":"+env.serverPort, mux)
 }
