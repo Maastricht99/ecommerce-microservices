@@ -1,7 +1,8 @@
-import { Body, Controller, Get, Post, UsePipes } from '@nestjs/common';
+import { Body, Controller, Get, Post, Req, UnauthorizedException, UsePipes } from '@nestjs/common';
 import { ProductCatalogService } from './product-catalog.service';
 import { CreateProductDTO, CreateProductSchema } from './dtos/create-product.dto';
 import { ZodValidationPipe } from 'src/zod-validation.pipe';
+import { extractTokenFromHeaders } from 'src/utils';
 
 @Controller()
 export class ProductCatalogController {
@@ -18,8 +19,14 @@ export class ProductCatalogController {
     @Post("/products")
     @UsePipes(new ZodValidationPipe(CreateProductSchema))
     async createProduct(
-        @Body() dto: CreateProductDTO
+        @Body() dto: CreateProductDTO,
+        @Req() req: Request
     ) {
+        const token = extractTokenFromHeaders(req);
+        if (!token) {
+            throw new UnauthorizedException();
+        }
 
+        return this.productCatalogService.createProduct(token, dto);
     }
 }
