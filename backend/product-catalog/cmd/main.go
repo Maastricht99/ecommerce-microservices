@@ -7,7 +7,9 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 
+	"github.com/dgrijalva/jwt-go"
 	"github.com/google/uuid"
 	"github.com/joho/godotenv"
 	"go.mongodb.org/mongo-driver/bson"
@@ -21,14 +23,32 @@ type CreateProductRequest struct {
 }
 
 type Product struct {
-	ID    string  `bson:"_id,omitempty" json:"id,omitempty"`
-	Name  string  `bson:"name" json:"name"`
-	Price float32 `bson:"price" json:"price"`
+	ID     string  `bson:"_id,omitempty" json:"id,omitempty"`
+	UserID string  `bson:"userId" json:"userId"`
+	Name   string  `bson:"name" json:"name"`
+	Price  float32 `bson:"price" json:"price"`
 }
 
 type ApiError struct {
 	StatusCode int
 	Msg        any
+}
+
+type CustomClaims struct {
+	UserID string `json:"user_id"`
+	jwt.StandardClaims
+}
+
+func ValidateToken(tokenString string) (string, error) {
+	token, err := jwt.ParseWithClaims(tokenString, &CustomClaims{}, func(token *jwt.Token) (interface{}, error) {
+		return []byte(env.jwtSecret), nil
+	})
+
+	if claims, ok := token.Claims.(*CustomClaims); ok && token.Valid {
+		return claims.UserID, nil
+	} else {
+		return "", err
+	}
 }
 
 func InternalServerError() *ApiError {
@@ -70,6 +90,7 @@ type Config struct {
 	dbUser     string
 	dbPassword string
 	dbName     string
+	jwtSecret  string
 }
 
 func LoadConfig() *Config {
@@ -85,6 +106,7 @@ func LoadConfig() *Config {
 		dbUser:     os.Getenv("DB_USER"),
 		dbPassword: os.Getenv("DB_PASSWORD"),
 		dbName:     os.Getenv("DB_NAME"),
+		jwtSecret:  os.Getenv("JWT_SECRET"),
 	}
 }
 
@@ -141,15 +163,27 @@ func main() {
 
 		defer r.Body.Close()
 
+		authHeader := r.Header.Get("Authorization")
+		if authHeader == "" {
+			return fmt.Errorf("authorization header missing")
+		}
+
+		tokenString := strings.TrimPrefix(authHeader, "Bearer ")
+		userID, err := ValidateToken(tokenString)
+		if err != nil {
+			return fmt.Errorf("invalid token")
+		}
+
 		uuid, err := uuid.NewRandom()
 		if err != nil {
 			return nil
 		}
 
 		product := Product{
-			ID:    uuid.String(),
-			Name:  req.Name,
-			Price: req.Price,
+			ID:     uuid.String(),
+			UserID: userID,
+			Name:   req.Name,
+			Price:  req.Price,
 		}
 
 		collection := client.Database(env.dbName).Collection("products")
