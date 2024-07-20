@@ -8,6 +8,10 @@ const EnvSchema = z.object({
         auth: z.object({
             host: z.string(),
             port: z.coerce.number()
+        }),
+        productCatalog: z.object({
+            host: z.string(),
+            port: z.coerce.number()
         })
     })
 });
@@ -23,6 +27,10 @@ export default () => {
             auth: {
                 host: process.env.AUTH_SERVICE_HOST,
                 port: process.env.AUTH_SERVICE_PORT
+            },
+            productCatalog: {
+                host: process.env.PRODUCT_CATALOG_HOST,
+                port: process.env.PRODUCT_CATALOG_PORT
             }
         }
     }

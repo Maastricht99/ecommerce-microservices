@@ -57,17 +57,5 @@ async def login(dto: LoginDTO, db: db_dependency):
     token = generate_token(str(db_user.id), db_user.role)
     return LoginResponse(token)
 
-class AuthenticateResponse(BaseModel):
-    user_id: str
-    role: UserRole
-
-@app.get("/authenticate", response_model=AuthenticateResponse)
-async def authenticate(request: Request):
-    token = extract_token_from_headers(request)
-    if token is None:
-        raise Exception("No token found in headers.")
-    payload = decode_token(token)
-    return AuthenticateResponse(**payload)
-
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=config.SERVER_PORT)

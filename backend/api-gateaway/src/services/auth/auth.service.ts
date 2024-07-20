@@ -5,7 +5,7 @@ import { map } from "rxjs/operators";
 import { ConfigService } from "@nestjs/config";
 import { Env } from "src/config";
 import { LoginDTO } from "./dtos/login.dto";
-import { AuthenticateResponse, LoginResponse, RegisterResponse } from "./responses";
+import { LoginResponse, RegisterResponse } from "./responses";
 
 @Injectable()
 export class AuthService {
@@ -30,15 +30,4 @@ export class AuthService {
       );
   }
 
-  async authenticate(token: string) {
-    const { auth: { host, port } } = this.configService.get("service", { infer: true })
-    return this.httpService.get<AuthenticateResponse>(`http://${host}:${port}/authenticate`, {
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
-    })
-    .pipe(
-      map(res => res.data)
-    );
-  }
 }
