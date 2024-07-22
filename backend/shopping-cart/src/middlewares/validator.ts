@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { Request, Response, NextFunction } from "express";
+import { Response, NextFunction, Request } from "express";
 
 export function validate(schema: z.Schema) {
     return function(req: Request, _: Response, next: NextFunction): void {
@@ -10,9 +10,10 @@ export function validate(schema: z.Schema) {
         })
 
         if (result.success) {
-            req.params = result.data.params,
-            req.query = result.data.query,
-            req.body = result.data.body
+            req.locals = {};
+            req.locals.params = result.data.params,
+            req.locals.query = result.data.query,
+            req.locals.body = result.data.body
 
             return next();
         }
