@@ -1,67 +1,105 @@
 version: "3.8"
 services: 
-  api-gateaway:
-    container_name: api-gateaway
+  # api-gateaway:
+  #   container_name: api-gateaway
+  #   build:
+  #     context: ./backend/api-gateaway
+  #     dockerfile: Dockerfile
+  #   env_file:
+  #     - ./backend/api-gateaway/.env
+  #   environment:
+  #     - AUTH_SERVICE_HOST=auth-service
+  #     - PRODUCT_CATALOG_HOST=product-catalog
+  #   ports:
+  #     - ${API_GATEAWAY_PORT}:3000
+  #   depends_on:
+  #     - auth-service
+  #     - product-catalog
+
+  # auth-service:
+  #   container_name: auth-service
+  #   build:
+  #     context: ./backend/auth-service
+  #     dockerfile: Dockerfile
+  #   env_file:
+  #     - ./backend/auth-service/.env
+  #   environment:
+  #     - DATABASE_HOST=auth-service-db
+  #     - DATABASE_PORT=5432
+  #   ports:
+  #     - ${AUTH_SERVICE_PORT}:3001
+  #   depends_on:
+  #     - auth-service-db
+
+  # auth-service-db:
+  #   container_name: auth-service-db
+  #   image: postgres
+  #   environment:
+  #     - POSTGRES_PASSWORD=${AUTH_SERVICE_DB_PASSWORD}
+  #     - POSTGRES_USER=${AUTH_SERVICE_DB_USER}
+  #     - POSTGRES_DB=${AUTH_SERVICE_DB_NAME}
+  #   ports:
+  #     - ${AUTH_SERVICE_DB_PORT}:5432
+
+  # product-catalog:
+  #   container_name: product-catalog
+  #   build:
+  #     context: ./backend/product-catalog
+  #     dockerfile: Dockerfile
+  #   env_file:
+  #     - ./backend/product-catalog/.env
+  #   environment:
+  #     - DB_HOST=product-catalog-db
+  #     - DB_PORT=27017
+  #   ports:
+  #     - ${PRODUCT_CATALOG_PORT}:3002
+  #   depends_on:
+  #     - product-catalog-db
+
+  # product-catalog-db:
+  #   container_name: product-catalog-db
+  #   image: mongo:latest
+  #   environment:
+  #     - MONGO_INITDB_ROOT_USERNAME=${PRODUCT_CATALOG_DB_USER}
+  #     - MONGO_INITDB_ROOT_PASSWORD=${PRODUCT_CATALOG_DB_PASSWORD}
+  #     - MONGO_INITDB_DATABASE=${PRODUCT_CATALOG_DB_NAME}
+  #   ports:
+  #   - ${PRODUCT_CATALOG_DB_PORT}:27017
+
+  shopping-cart:
+    container_name: shopping-cart
     build:
-      context: ./backend/api-gateaway
+      context: ./backend/shopping-cart
       dockerfile: Dockerfile
     env_file:
-      - ./backend/api-gateaway/.env
+      - ./backend/shopping-cart/.env
     environment:
-      - AUTH_SERVICE_HOST=auth-service
-      - PRODUCT_CATALOG_HOST=product-catalog
+      - POSTGRES_DB_HOST=shopping-cart-postgres-db
+      - MONGO_DB_HOST=shopping-cart-mongo-db
     ports:
-      - ${API_GATEAWAY_PORT}:3000
+      - 3003:3003
     depends_on:
-      - auth-service
-      - product-catalog
+      - shopping-cart-postgres-db
+      - shopping-cart-mongo-db
 
-  auth-service:
-    container_name: auth-service
-    build:
-      context: ./backend/auth-service
-      dockerfile: Dockerfile
-    env_file:
-      - ./backend/auth-service/.env
-    environment:
-      - DATABASE_HOST=auth-service-db
-      - DATABASE_PORT=5432
-    ports:
-      - ${AUTH_SERVICE_PORT}:3001
-    depends_on:
-      - auth-service-db
-
-  auth-service-db:
-    container_name: auth-service-db
+  shopping-cart-postgres-db:
+    container_name: shopping-cart-postgres-db
     image: postgres
     environment:
-      - POSTGRES_PASSWORD=${AUTH_SERVICE_DB_PASSWORD}
-      - POSTGRES_USER=${AUTH_SERVICE_DB_USER}
-      - POSTGRES_DB=${AUTH_SERVICE_DB_NAME}
+      - POSTGRES_PASSWORD=xxx
+      - POSTGRES_USER=postgres
+      - POSTGRES_DB=xxx
     ports:
-      - ${AUTH_SERVICE_DB_PORT}:5432
+      - 5432:5432
 
-  product-catalog:
-    container_name: product-catalog
-    build:
-      context: ./backend/product-catalog
-      dockerfile: Dockerfile
-    env_file:
-      - ./backend/product-catalog/.env
-    environment:
-      - DB_HOST=product-catalog-db
-      - DB_PORT=27017
-    ports:
-      - ${PRODUCT_CATALOG_PORT}:3002
-    depends_on:
-      - product-catalog-db
-
-  product-catalog-db:
-    container_name: product-catalog-db
+  shopping-cart-mongo-db:
+    container_name: shopping-cart-mongo-db
     image: mongo:latest
     environment:
-      - MONGO_INITDB_ROOT_USERNAME=${PRODUCT_CATALOG_DB_USER}
-      - MONGO_INITDB_ROOT_PASSWORD=${PRODUCT_CATALOG_DB_PASSWORD}
-      - MONGO_INITDB_DATABASE=${PRODUCT_CATALOG_DB_NAME}
+      - MONGO_INITDB_ROOT_USERNAME=xxx
+      - MONGO_INITDB_ROOT_PASSWORD=xxx
+      - MONGO_INITDB_DATABASE=xxx
     ports:
-    - ${PRODUCT_CATALOG_DB_PORT}:27017
+    - 27017:27017
+
+
