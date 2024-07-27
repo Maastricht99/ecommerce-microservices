@@ -1,24 +1,65 @@
-import { QueryResult } from "pg";
-import { postgres } from "../providers/postgres";
-import { AddProductToCartDTO } from "../types";
+import { DBCart, DBProductItem } from "../types";
 import { mongo } from "../providers/mongo";
-import { getProductById } from "../repositories/product";
+import * as productRepo from "../repositories/product";
+import * as cartRepo from "../repositories/cart";
+
+export async function getShoppingCart(userId: string) {
+    const cart = await cartRepo.getCartByUserId(userId);
+    return cart;
+}
 
 export async function addProductToCart(userId: string, productId: string, quantity: number) {
-
-    // get product from postgres db
-
-    const product = getProductById(productId);
+    const product = await productRepo.getProductById(productId);
 
     if (!product) {
         throw new Error("Product not found.");
     }
 
-    // get cart by user id
+    const productToAdd: DBProductItem = {
+        id: product.id,
+        name: product.name,
+        price: product.price,
+        quantity
+    } 
 
-    // if no cart, create
+    const cart = await cartRepo.getCartByUserId(userId);  
+    
+    if (!cart) {
+        const newCart: DBCart = {
+            userId,
+            totalPrice: product.price * quantity,
+            products: [productToAdd]
+        }
+        
+        await cartRepo.createCart(newCart);
+        return;
+    }
 
-    // if product already in cart, throw error
+    const isProductAlreadyInCart = cart.products.some(p => p.id === productId);
+    if (isProductAlreadyInCart) {
+        throw new Error("Product already in cart");
+    }
 
-    // if product not in cart, add
+    await cartRepo.addProductToCart(cart, productToAdd);
+}
+
+export async function removeProductFromCart(userId: string, productId: string) {
+    const product = await productRepo.getProductById(productId);
+
+    if (!product) {
+        throw new Error("Product not found");
+    }
+    const cart = await mongo.db().collection("carts").findOne<DBCart>({ userId });  
+    
+    if (!cart) {
+        throw new Error("Cart not found");
+    }
+
+    const productToRemove = cart.products.find(p => p.id === productId)
+    if (!productToRemove) {
+        throw new Error("Product not found in cart")
+    }
+
+    await cartRepo.removeProductFromCart(cart, productToRemove);
+
 }

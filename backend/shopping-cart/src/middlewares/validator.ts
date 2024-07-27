@@ -2,7 +2,7 @@ import { z } from "zod";
 import { Response, NextFunction, Request } from "express";
 
 export function validate(schema: z.Schema) {
-    return function(req: Request, _: Response, next: NextFunction): void {
+    return function(req: Request, _res: Response, next: NextFunction): void {
         const result = schema.safeParse({
             params: req.params,
             query: req.query,

@@ -12,7 +12,13 @@ cartRouter.post("/cart", validate(AddProductToCartSchema), addProductToCart);
 
 cartRouter.delete("/cart", validate(RemoveProductFromCartSchema), removeProductFromCart);
 
+cartRouter.get("/test", async (_req: Request, res: Response) => {
+    const products = await productRepo.getAllProducts();
+    return res.status(201).json(products);
+})
+
 cartRouter.post("/test", async (req: Request, res: Response) => {
     const { id, name, price } = req.body;
     await productRepo.addProduct(id, name, price);
+    return res.status(201).json();
 })
