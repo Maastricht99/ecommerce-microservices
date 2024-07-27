@@ -1,5 +1,10 @@
 import { app } from "./app";
+import { createTables } from "./providers/postgres";
 
-app.listen(3003, () => {
-    console.log("App running on port 3003.");
-});
+(async () => {
+    await createTables();
+
+    app.listen(3003, () => {
+        console.log("App running on port 3003.");
+    });
+})();

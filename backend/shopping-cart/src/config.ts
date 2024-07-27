@@ -18,6 +18,9 @@ const ConfigSchema = z.object({
         user: z.string(),
         password: z.string(),
         database: z.string()
+    }),
+    jwt: z.object({
+        secret: z.string()
     })
 });
 
@@ -39,6 +42,9 @@ function loadConfig() {
             user: process.env.MONGO_DB_USER,
             password: process.env.MONGO_DB_PASSWORD,
             database: process.env.MONGO_DB_NAME,  
+        },
+        jwt: {
+            secret: process.env.JWT_SECRET
         }
     }
 
