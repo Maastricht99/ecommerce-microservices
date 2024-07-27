@@ -9,15 +9,15 @@ export function validate(schema: z.Schema) {
             body: req.body
         })
 
-        if (result.success) {
-            req.locals = {};
-            req.locals.params = result.data.params,
-            req.locals.query = result.data.query,
-            req.locals.body = result.data.body
-
-            return next();
+        if (!result.success) {
+            throw new Error("Validation error");
         }
 
-        throw new Error("Validation error");
+        req.locals = {};
+        req.locals.params = result.data.params,
+        req.locals.query = result.data.query,
+        req.locals.body = result.data.body
+
+        return next();
     }
 }

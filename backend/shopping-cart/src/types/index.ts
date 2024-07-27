@@ -24,6 +24,10 @@ export interface TypedAuthRequest<T extends ReqLocals> extends TypedRequest<T> {
     auth: Auth;
 };
 
+export type TokenPayload = {
+    user_id: string;
+}
+
 export type DBProduct = {
     id: string;
     name: string;

@@ -1,4 +1,3 @@
-import { ObjectId } from "mongodb";
 import { mongo } from "../providers/mongo";
 import { DBCart, DBProductItem } from "../types";
 
